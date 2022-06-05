@@ -1,40 +1,25 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# (c) @SpEcHIDe
+import logging
 
-from pyrogram import Client, __version__
+from pyrogram import Client as illuzX, filters as Worker
 
-from . import API_HASH, APP_ID, LOGGER, BOT_TOKEN 
+from config import ADMINS
 
-from .user import User
+logger = logging.getLogger(__name__)
 
-class Bot(Client):
-    USER: User = None
-    USER_ID: int = None
+@illuzX.on_message(Worker.command('logger') & Worker.user(ADMINS))
 
-    def __init__(self):
-        super().__init__(
-            "bot",
-            api_hash=API_HASH,
-            api_id=APP_ID,
-            plugins={
-                "root": "bot/plugins"
-            },
-            workers=200,
-            bot_token=BOT_TOKEN,
-            sleep_threshold=10
-        )
-        self.LOGGER = LOGGER
+async def log_file(bot, message):
 
-    async def start(self):
-        await super().start()
-        bot_details = await self.get_me()
-        self.set_parse_mode("html")
-        self.LOGGER(__name__).info(
-            f"@{bot_details.username}  started! "
-        )
-        self.USER, self.USER_ID = await User().start()
+    """Send log file"""
 
-    async def stop(self, *args):
-        await super().stop()
-        self.LOGGER(__name__).info("Bot stopped. Bye.")
+    try:
+
+        await message.reply_document('TelegramBot.log')
+
+    except Exception as e:
+
+        await message.reply(str(e))
+
+
+
+
