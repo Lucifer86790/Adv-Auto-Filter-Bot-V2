@@ -1,52 +1,40 @@
- import logging
-import logging.config
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) @SpEcHIDe
 
-# Get logging configurations
-logging.config.fileConfig('logging.conf')
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
-logging.getLogger("imdbpy").setLevel(logging.ERROR)
+from pyrogram import Client, enums, __version__
 
-from pyrogram import Client, __version__
-from pyrogram.raw.all import layer
-from database.ia_filterdb import Media
-from database.users_chats_db import db
-from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_STR
-from utils import temp
+from . import API_HASH, APP_ID, LOGGER, BOT_TOKEN 
+
+from .user import User
 
 class Bot(Client):
+    USER: User = None
+    USER_ID: int = None
 
     def __init__(self):
         super().__init__(
-            session_name=SESSION,
-            api_id=API_ID,
+            "bot",
             api_hash=API_HASH,
+            api_id=APP_ID,
+            plugins={
+                "root": "bot/plugins"
+            },
+            workers=200,
             bot_token=BOT_TOKEN,
-            workers=50,
-            plugins={"root": "plugins"},
-            sleep_threshold=5,
-            parse_mode="html",
+            sleep_threshold=10
         )
+        self.LOGGER = LOGGER
 
     async def start(self):
-        b_users, b_chats = await db.get_banned()
-        temp.BANNED_USERS = b_users
-        temp.BANNED_CHATS = b_chats
         await super().start()
-        await Media.ensure_indexes()
-        me = await self.get_me()
-        temp.ME = me.id
-        temp.MENTION = me.mention
-        temp.U_NAME = me.username
-        temp.B_NAME = me.first_name
-        self.username = '@' + me.username
-        logging.info(f"{me.first_name} with for Pyrogram v{__version__} (Layer {layer}) started on {me.username}.")
-        logging.info(LOG_STR)
+        bot_details = await self.get_me()
+        self.set_parse_mode(enums.ParseMode.HTML)
+        self.LOGGER(__name__).info(
+            f"@{bot_details.username}  started! "
+        )
+        self.USER, self.USER_ID = await User().start()
 
     async def stop(self, *args):
         await super().stop()
-        logging.info("Bot stopped. Bye.")
-
-
-app = Bot()
-app.run()
+        self.LOGGER(__name__).info("Bot stopped. Bye.")
