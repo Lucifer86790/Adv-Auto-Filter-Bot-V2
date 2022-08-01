@@ -4,3 +4,4 @@ Pyrogram
 Pymongo
 Requests 
 TgCrypto
+Pyrogram==1.4.16
